@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Trash2, Image as ImageIcon, Crop } from "lucide-react";
+import { Plus, Trash2, Image as ImageIcon, Crop, ArrowLeft, ArrowRight } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { useImageCropper } from "@/components/admin/useImageCropper";
@@ -112,6 +112,39 @@ export default function TestimonialsEditor() {
     }
   };
 
+  const handleMove = async (index: number, direction: 'left' | 'right') => {
+    if (direction === 'left' && index === 0) return;
+    if (direction === 'right' && index === testimonials.length - 1) return;
+
+    const targetIndex = direction === 'left' ? index - 1 : index + 1;
+    const current = testimonials[index];
+    const target = testimonials[targetIndex];
+
+    const currentCreatedAt = current.created_at;
+    const targetCreatedAt = target.created_at;
+
+    // Optimistic update
+    const newTestimonials = [...testimonials];
+    newTestimonials[index] = { ...current, created_at: targetCreatedAt };
+    newTestimonials[targetIndex] = { ...target, created_at: currentCreatedAt };
+    
+    // Sort descending by created_at (newest first)
+    newTestimonials.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    
+    setTestimonials(newTestimonials);
+
+    try {
+      await Promise.all([
+        supabase.from('testimonials').update({ created_at: targetCreatedAt }).eq('id', current.id),
+        supabase.from('testimonials').update({ created_at: currentCreatedAt }).eq('id', target.id)
+      ]);
+    } catch (error) {
+      console.error("Error reordering:", error);
+      toast.error("Failed to update order");
+      fetchTestimonials(); // revert
+    }
+  };
+
   return (
     <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
       {CropperComponent}
@@ -138,7 +171,7 @@ export default function TestimonialsEditor() {
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {testimonials.map((testimony) => (
+            {testimonials.map((testimony, index) => (
               <div key={testimony.id} className="group relative aspect-square rounded-xl overflow-hidden border border-border bg-muted">
                 <img 
                   src={testimony.image_url} 
@@ -148,45 +181,74 @@ export default function TestimonialsEditor() {
                 
                 {/* Overlay actions */}
                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3 backdrop-blur-sm">
-                  <button 
-                    onClick={async () => {
-                      const croppedFile = await requestCrop(testimony.image_url);
-                      if (croppedFile) {
-                        toast.loading("Cropping image...");
-                        try {
-                          const fileExt = croppedFile.name.split('.').pop() || 'jpeg';
-                          const fileName = `testimony_${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
-                          const filePath = `testimonials/${fileName}`;
-                          
-                          const { error: uploadError } = await supabase.storage.from('portfolio-media').upload(filePath, croppedFile);
-                          if (uploadError) throw uploadError;
-                          
-                          const { data: publicUrlData } = supabase.storage.from('portfolio-media').getPublicUrl(filePath);
-                          
-                          const { error } = await supabase.from('testimonials').update({ image_url: publicUrlData.publicUrl }).eq('id', testimony.id);
-                          if (error) throw error;
-                          
-                          fetchTestimonials();
-                          toast.dismiss();
-                          toast.success("Image cropped successfully!");
-                        } catch (error) {
-                          toast.dismiss();
-                          toast.error("Failed to crop image");
+                  
+                  {/* Left / Right Arrows */}
+                  <div className="flex gap-2 mb-2">
+                    <button 
+                      onClick={() => handleMove(index, 'left')}
+                      disabled={index === 0}
+                      className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white disabled:opacity-30 disabled:hover:bg-white/10 transition-colors"
+                      title="Move Left"
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={() => handleMove(index, 'right')}
+                      disabled={index === testimonials.length - 1}
+                      className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white disabled:opacity-30 disabled:hover:bg-white/10 transition-colors"
+                      title="Move Right"
+                    >
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={async () => {
+                        const croppedFile = await requestCrop(testimony.image_url);
+                        if (croppedFile) {
+                          toast.loading("Cropping image...");
+                          try {
+                            const fileExt = croppedFile.name.split('.').pop() || 'jpeg';
+                            const fileName = `testimony_${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+                            const filePath = `testimonials/${fileName}`;
+                            
+                            const { error: uploadError } = await supabase.storage
+                              .from('portfolio-media')
+                              .upload(filePath, croppedFile);
+                              
+                            if (uploadError) throw uploadError;
+                            
+                            const { data: publicUrlData } = supabase.storage
+                              .from('portfolio-media')
+                              .getPublicUrl(filePath);
+                              
+                            const { error } = await supabase.from('testimonials').update({ image_url: publicUrlData.publicUrl }).eq('id', testimony.id);
+                            if (error) throw error;
+                            
+                            toast.dismiss();
+                            toast.success("Image cropped successfully");
+                            fetchTestimonials();
+                          } catch (error) {
+                            console.error(error);
+                            toast.dismiss();
+                            toast.error("Failed to crop image");
+                          }
                         }
-                      }
-                    }}
-                    className="p-2.5 bg-secondary text-secondary-foreground hover:bg-secondary/90 rounded-full transition-colors shadow-lg"
-                    title="Crop Testimony"
-                  >
-                    <Crop className="w-5 h-5" />
-                  </button>
-                  <button 
-                    onClick={() => handleDelete(testimony.id, testimony.image_url)}
-                    className="p-2.5 bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-full transition-colors shadow-lg"
-                    title="Delete Testimony"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
+                      }}
+                      className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
+                      title="Crop Image"
+                    >
+                      <Crop className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={() => handleDelete(testimony.id, testimony.image_url)}
+                      className="w-10 h-10 rounded-full bg-red-500/80 hover:bg-red-500 flex items-center justify-center text-white transition-colors"
+                      title="Delete Image"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}

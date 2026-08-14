@@ -66,7 +66,7 @@ const TestimonialsSection = () => {
 
   useEffect(() => {
     const fetchImages = async () => {
-      const { data, error } = await supabase.from('testimonials').select('*').order('id', { ascending: true });
+      const { data, error } = await supabase.from('testimonials').select('*').order('created_at', { ascending: false });
       if (!error && data && data.length > 0) {
         // Double up images if there are too few to make a nice circle
         const images = data.map(row => row.image_url);

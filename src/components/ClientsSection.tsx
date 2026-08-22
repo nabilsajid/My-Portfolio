@@ -69,11 +69,11 @@ const ClientsSection = () => {
     <section className="section-padding max-w-6xl mx-auto">
       <SectionHeading title="Clients" subtitle="Brands and creators I've collaborated with" />
       
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 md:gap-12 py-8 place-items-center">
+      <div className="flex flex-wrap justify-center gap-8 md:gap-12 lg:gap-16 py-8">
         {clients.map((client) => (
           <div
             key={client.id}
-            className="flex items-center justify-center w-full h-[120px] md:h-[150px]"
+            className="flex items-center justify-center w-[120px] sm:w-[150px] md:w-[180px] h-[120px] md:h-[150px]"
           >
             <img
               src={client.image_url}

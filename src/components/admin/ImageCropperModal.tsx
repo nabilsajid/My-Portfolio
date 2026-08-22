@@ -11,11 +11,13 @@ interface ImageCropperModalProps {
   imageSrc: string;
   onCropComplete: (croppedBlob: Blob) => Promise<void>;
   aspect?: number;
+  mimeType?: string;
 }
 
 export async function getCroppedImg(
   image: HTMLImageElement,
-  crop: PixelCrop
+  crop: PixelCrop,
+  mimeType: string = 'image/jpeg'
 ): Promise<Blob> {
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
@@ -53,13 +55,13 @@ export async function getCroppedImg(
         }
         resolve(blob);
       },
-      'image/jpeg',
+      mimeType,
       0.9
     );
   });
 }
 
-const ImageCropperModal = ({ isOpen, onClose, imageSrc, onCropComplete, aspect }: ImageCropperModalProps) => {
+const ImageCropperModal = ({ isOpen, onClose, imageSrc, onCropComplete, aspect, mimeType = 'image/jpeg' }: ImageCropperModalProps) => {
   const [crop, setCrop] = useState<Crop>({
     unit: '%',
     width: 90,
@@ -105,7 +107,7 @@ const ImageCropperModal = ({ isOpen, onClose, imageSrc, onCropComplete, aspect }
     
     try {
       setIsProcessing(true);
-      const croppedBlob = await getCroppedImg(imageRef.current, completedCrop);
+      const croppedBlob = await getCroppedImg(imageRef.current, completedCrop, mimeType);
       await onCropComplete(croppedBlob);
       onClose();
     } catch (e) {

@@ -1,55 +1,61 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Menu, X } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { Home, Briefcase, Zap, Clock, DollarSign, Mail } from "lucide-react";
 
 const links = [
-  { label: "Work", href: "#longform", id: "longform" },
-  { label: "Skills", href: "#skills", id: "skills" },
-  { label: "Experience", href: "#experience", id: "experience" },
-  { label: "Pricing", href: "#pricing", id: "pricing" },
-  { label: "Contact", href: "#contact", id: "contact" },
+  { label: "Home", href: "#home", id: "home", icon: Home },
+  { label: "Work", href: "#longform", id: "longform", icon: Briefcase },
+  { label: "Skills", href: "#skills", id: "skills", icon: Zap },
+  { label: "Experience", href: "#experience", id: "experience", icon: Clock },
+  { label: "Pricing", href: "#pricing", id: "pricing", icon: DollarSign },
+  { label: "Contact", href: "#contact", id: "contact", icon: Mail },
 ];
 
 const Navbar = () => {
-  const [open, setOpen] = useState(false);
-  const [active, setActive] = useState<string | null>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const [active, setActive] = useState<string | null>("home");
+  const [isScrolling, setIsScrolling] = useState(false);
 
+  // Scroll spy logic
   useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [open]);
-
-  useEffect(() => {
-    const sections = links
-      .map((l) => document.getElementById(l.id))
-      .filter((el): el is HTMLElement => !!el);
-
     const handler = () => {
       const probe = window.innerHeight * 0.4;
       let current: string | null = null;
-      for (const sec of sections) {
-        const rect = sec.getBoundingClientRect();
-        if (rect.top <= probe && rect.bottom >= probe) {
-          current = sec.id;
-          break;
+      
+      if (window.scrollY < 100) {
+        current = "home";
+      } else if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 50) {
+        current = "contact";
+      } else {
+        for (const l of links) {
+          if (l.id === "home") continue;
+          const sec = document.getElementById(l.id);
+          if (sec) {
+            const rect = sec.getBoundingClientRect();
+            if (rect.top <= probe && rect.bottom >= probe) {
+              current = l.id;
+              break;
+            }
+          }
+        }
+        
+        // Fallback: nearest above probe
+        if (!current) {
+          let minDiff = Infinity;
+          for (const l of links) {
+            if (l.id === "home") continue;
+            const sec = document.getElementById(l.id);
+            if (sec) {
+              const rect = sec.getBoundingClientRect();
+              if (rect.top <= probe && probe - rect.top < minDiff) {
+                minDiff = probe - rect.top;
+                current = l.id;
+              }
+            }
+          }
         }
       }
-      // Fallback: pick last section whose top is above probe
-      if (!current) {
-        for (const sec of sections) {
-          const rect = sec.getBoundingClientRect();
-          if (rect.top <= probe) current = sec.id;
-        }
-      }
-      setActive(current);
+      
+      setActive(current || "home");
     };
 
     handler();
@@ -61,111 +67,80 @@ const Navbar = () => {
     };
   }, []);
 
+  // Scrolling state logic
+  useEffect(() => {
+    let timeout: any;
+    const handleScrollState = () => {
+      setIsScrolling(true);
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        setIsScrolling(false);
+      }, 300); // 300ms after scrolling stops
+    };
+    
+    window.addEventListener("scroll", handleScrollState, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScrollState);
+      clearTimeout(timeout);
+    };
+  }, []);
+
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault();
+    if (href === "#home") {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
     const targetId = href.replace('#', '');
     const elem = document.getElementById(targetId);
     if (elem) {
       elem.scrollIntoView({ behavior: 'smooth' });
     }
-    setOpen(false);
   };
 
   const navContent = (
-    <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-auto" ref={menuRef}>
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: 8, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 8, scale: 0.95 }}
-            transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
-            className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 glass-effect rounded-2xl px-4 py-3 space-y-1 min-w-[180px] shadow-lg shadow-primary/10"
-          >
-            {links.map((l, i) => {
-              const isActive = active === l.id;
-              const isPricing = l.id === "pricing";
-              return (
-                <motion.a
-                  key={l.label}
-                  href={l.href}
-                  onClick={(e) => handleNavClick(e, l.href)}
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.04, duration: 0.2, ease: "easeOut" }}
-                  className={`relative block text-sm transition-colors px-2 py-1.5 rounded-lg hover:bg-white/5 ${
-                    isActive ? "text-foreground border border-primary/40 bg-white/5" : "text-muted-foreground hover:text-foreground"
-                  } ${isPricing ? "font-semibold" : ""}`}
-                >
-                  <span className="relative">
-                    {isPricing ? (
-                      <span className="bg-gradient-to-r from-[hsl(265_85%_70%)] via-[hsl(280_90%_75%)] to-[hsl(210_95%_70%)] bg-clip-text text-transparent">
-                        {l.label}
-                      </span>
-                    ) : (
-                      l.label
-                    )}
+    <nav className={`fixed right-2 sm:right-6 top-1/2 -translate-y-1/2 z-50 transition-all duration-300 ${
+      isScrolling ? 'opacity-20 pointer-events-none scale-95 blur-[1px]' : 'opacity-100 scale-100 blur-none'
+    }`}>
+      <div className="flex flex-col gap-4 p-3 bg-black/40 backdrop-blur-md border border-white/10 rounded-full shadow-2xl shadow-primary/20">
+        {links.map((l) => {
+          const isActive = active === l.id;
+          const Icon = l.icon;
+          const isPricing = l.id === "pricing";
+          
+          return (
+            <a
+              key={l.id}
+              href={l.href}
+              onClick={(e) => handleNavClick(e, l.href)}
+              className="group relative flex items-center justify-center transition-all duration-300 outline-none"
+              aria-label={l.label}
+            >
+              {/* The Icon Container */}
+              <div className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-300 ${
+                isActive 
+                  ? "bg-primary text-primary-foreground shadow-[0_0_15px_-3px_hsl(265_90%_60%/0.8)] scale-110" 
+                  : "text-muted-foreground hover:text-white hover:bg-white/10"
+              }`}>
+                <Icon className={`w-5 h-5 ${isPricing && isActive ? "animate-pulse" : ""}`} />
+              </div>
+
+              {/* Tooltip Label (Appears on hover) */}
+              <div className="absolute right-full mr-4 px-3 py-1.5 rounded-lg bg-black/80 backdrop-blur-md border border-white/10 text-white text-sm font-medium opacity-0 -translate-x-4 pointer-events-none group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 whitespace-nowrap shadow-xl">
+                {isPricing ? (
+                  <span className="bg-gradient-to-r from-[hsl(265_85%_70%)] via-[hsl(280_90%_75%)] to-[hsl(210_95%_70%)] bg-clip-text text-transparent font-bold">
+                    {l.label}
                   </span>
-                </motion.a>
-              );
-            })}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <div className="glass-effect rounded-full px-3 py-2 flex items-center gap-1 shadow-lg shadow-primary/10">
-        <a href="#" className="font-display font-bold text-sm text-gradient px-3 py-1.5">
-          Portfolio
-        </a>
-
-        <div className="hidden md:flex items-center gap-1">
-          {links.map((l) => {
-            const isActive = active === l.id;
-            const isPricing = l.id === "pricing";
-            return (
-              <a
-                key={l.label}
-                href={l.href}
-                onClick={(e) => handleNavClick(e, l.href)}
-                className={`relative text-sm px-3 py-1.5 rounded-full transition-all duration-300 ${
-                  isActive
-                    ? "text-foreground bg-white/5 border border-primary/40 shadow-[0_0_20px_-4px_hsl(265_90%_60%/0.6)]"
-                    : "text-muted-foreground hover:text-foreground hover:bg-white/5 border border-transparent"
-                } ${isPricing ? "font-semibold" : ""}`}
-              >
-                <span className="relative bg-clip-text">
-                  {isPricing ? (
-                    <span className="bg-gradient-to-r from-[hsl(265_85%_70%)] via-[hsl(280_90%_75%)] to-[hsl(210_95%_70%)] bg-clip-text text-transparent">
-                      {l.label}
-                    </span>
-                  ) : (
-                    l.label
-                  )}
-                </span>
-              </a>
-            );
-          })}
-        </div>
-
-        <motion.button
-          onClick={() => setOpen(!open)}
-          className="md:hidden text-foreground px-2 py-1.5"
-          aria-label="Toggle menu"
-          whileTap={{ scale: 0.9 }}
-          transition={{ duration: 0.15 }}
-        >
-          <AnimatePresence mode="wait">
-            {open ? (
-              <motion.span key="close" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.15 }}>
-                <X className="w-5 h-5" />
-              </motion.span>
-            ) : (
-              <motion.span key="menu" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.15 }}>
-                <Menu className="w-5 h-5" />
-              </motion.span>
-            )}
-          </AnimatePresence>
-        </motion.button>
+                ) : (
+                  l.label
+                )}
+                {/* Tooltip triangle */}
+                <div className="absolute top-1/2 -right-1.5 -translate-y-1/2 border-y-[6px] border-y-transparent border-l-[6px] border-l-white/10"></div>
+                <div className="absolute top-1/2 -right-1 -translate-y-1/2 border-y-[6px] border-y-transparent border-l-[6px] border-l-black/80"></div>
+              </div>
+            </a>
+          );
+        })}
       </div>
     </nav>
   );

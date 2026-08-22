@@ -39,7 +39,8 @@ export const useImageCropper = () => {
   const handleCropComplete = async (blob: Blob) => {
     if (resolverRef.current && fileInfoRef.current) {
       // Provide the blob as a File object so it plays nicely with existing uploaders
-      const file = new File([blob], fileInfoRef.current.name, { type: fileInfoRef.current.type });
+      const originalName = fileInfoRef.current.name.split('.')[0] || 'cropped';
+      const file = new File([blob], `${originalName}.png`, { type: 'image/png' });
       // Clear the resolver reference BEFORE calling it, so handleClose doesn't fire it again
       const resolve = resolverRef.current;
       resolverRef.current = null;

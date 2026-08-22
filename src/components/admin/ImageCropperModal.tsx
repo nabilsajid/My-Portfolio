@@ -55,13 +55,13 @@ export async function getCroppedImg(
         }
         resolve(blob);
       },
-      mimeType,
-      0.9
+      'image/png',
+      1
     );
   });
 }
 
-const ImageCropperModal = ({ isOpen, onClose, imageSrc, onCropComplete, aspect, mimeType = 'image/jpeg' }: ImageCropperModalProps) => {
+const ImageCropperModal = ({ isOpen, onClose, imageSrc, onCropComplete, aspect, mimeType = 'image/png' }: ImageCropperModalProps) => {
   const [crop, setCrop] = useState<Crop>({
     unit: '%',
     width: 90,

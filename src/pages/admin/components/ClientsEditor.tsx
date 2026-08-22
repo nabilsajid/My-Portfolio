@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Trash2, Image as ImageIcon, Crop } from "lucide-react";
+import { Plus, Trash2, Image as ImageIcon, Crop, ArrowLeft, ArrowRight } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { useImageCropper } from "@/components/admin/useImageCropper";
@@ -151,6 +151,56 @@ export default function ClientsEditor() {
     }
   };
 
+
+  const handleMove = async (index: number, direction: 'left' | 'right') => {
+    if (
+      (direction === 'left' && index === 0) ||
+      (direction === 'right' && index === clients.length - 1)
+    ) return;
+
+    const newIndex = direction === 'left' ? index - 1 : index + 1;
+    const currentClient = clients[index];
+    const targetClient = clients[newIndex];
+
+    const newClients = [...clients];
+    newClients[index] = targetClient;
+    newClients[newIndex] = currentClient;
+
+    const currentOrder = currentClient.order_index ?? index;
+    const targetOrder = targetClient.order_index ?? newIndex;
+
+    if (currentOrder === targetOrder) {
+      newClients.forEach((client, i) => {
+        client.order_index = i;
+      });
+      setClients([...newClients]);
+
+      try {
+        const promises = newClients.map((client) =>
+          supabase.from('client_logos').update({ order_index: client.order_index }).eq('id', client.id)
+        );
+        await Promise.all(promises);
+      } catch (error) {
+        toast.error("Failed to reorder");
+        fetchClients();
+      }
+    } else {
+      currentClient.order_index = targetOrder;
+      targetClient.order_index = currentOrder;
+      setClients([...newClients]);
+
+      try {
+        await Promise.all([
+          supabase.from('client_logos').update({ order_index: targetOrder }).eq('id', currentClient.id),
+          supabase.from('client_logos').update({ order_index: currentOrder }).eq('id', targetClient.id)
+        ]);
+      } catch (error) {
+        toast.error("Failed to reorder");
+        fetchClients();
+      }
+    }
+  };
+
   return (
     <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
       {CropperComponent}
@@ -179,14 +229,23 @@ export default function ClientsEditor() {
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-            {clients.map((client) => (
+            {clients.map((client, index) => (
               <div key={client.id} className="relative group bg-background border border-border rounded-xl p-4 flex flex-col items-center justify-center transition-all hover:border-primary/40">
                 <div className="h-16 w-full flex items-center justify-center mb-3">
                   <img src={client.image_url} alt={client.name} className="max-h-full max-w-full object-contain" />
                 </div>
                 <p className="text-xs font-medium text-center text-muted-foreground truncate w-full">{client.name}</p>
                 
-                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 rounded-xl backdrop-blur-[2px]">
+                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 rounded-xl backdrop-blur-[2px]">
+                  {index > 0 && (
+                    <button 
+                      onClick={() => handleMove(index, 'left')}
+                      className="p-1.5 bg-background/20 text-white hover:bg-background/40 rounded-full transition-colors shadow-lg"
+                      title="Move Left"
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                    </button>
+                  )}
                   <button 
                     onClick={async () => {
                       const croppedFile = await requestCrop(client.image_url);
@@ -214,18 +273,27 @@ export default function ClientsEditor() {
                         }
                       }
                     }}
-                    className="p-2 bg-secondary text-secondary-foreground hover:bg-secondary/90 rounded-full transition-colors shadow-lg"
+                    className="p-1.5 bg-secondary text-secondary-foreground hover:bg-secondary/90 rounded-full transition-colors shadow-lg"
                     title="Crop Logo"
                   >
                     <Crop className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => handleDelete(client.id)}
-                    className="p-2 bg-destructive text-white rounded-full transition-colors hover:scale-110 shadow-lg"
+                    className="p-1.5 bg-destructive text-white rounded-full transition-colors hover:scale-110 shadow-lg"
                     title="Remove Logo"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
+                  {index < clients.length - 1 && (
+                    <button 
+                      onClick={() => handleMove(index, 'right')}
+                      className="p-1.5 bg-background/20 text-white hover:bg-background/40 rounded-full transition-colors shadow-lg"
+                      title="Move Right"
+                    >
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

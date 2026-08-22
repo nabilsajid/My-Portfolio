@@ -41,8 +41,12 @@ const ClientsSection = () => {
       return 'h-[80px] md:h-[120px] lg:h-[160px] max-w-[150%] md:max-w-[200%]';
     }
     
-    if (n.includes('byd') || n.includes('arekta')) {
-      return 'h-[80px] md:h-[120px] lg:h-[150px] max-w-[150%] md:max-w-[200%]';
+    if (n.includes('byd')) {
+      return 'h-[80px] md:h-[120px] lg:h-[150px] max-w-[150%]';
+    }
+    
+    if (n.includes('arekta')) {
+      return 'h-[80px] md:h-[110px] lg:h-[130px] max-w-[150%] md:max-w-[200%] -mt-2 md:-mt-4';
     }
     
     if (n.includes('everafter')) {

@@ -64,15 +64,23 @@ const TestimonialsSection = () => {
   const [isHovered, setIsHovered] = useState(false);
   const [testimonyImages, setTestimonyImages] = useState<string[]>([]);
 
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     const fetchImages = async () => {
-      const { data, error } = await supabase.from('testimonials').select('*').order('created_at', { ascending: false });
-      if (!error && data && data.length > 0) {
-        // Double up images if there are too few to make a nice circle
-        const images = data.map(row => row.image_url);
-        setTestimonyImages(images.length < 6 ? [...images, ...images] : images);
-      } else {
-        setTestimonyImages([]);
+      try {
+        const { data, error } = await supabase.from('testimonials').select('*').order('created_at', { ascending: false });
+        if (!error && data && data.length > 0) {
+          // Double up images if there are too few to make a nice circle
+          const images = data.map(row => row.image_url);
+          setTestimonyImages(images.length < 6 ? [...images, ...images] : images);
+        } else {
+          setTestimonyImages([]);
+        }
+      } catch (error) {
+        console.error("Error fetching testimonials:", error);
+      } finally {
+        setLoading(false);
       }
     };
     fetchImages();
@@ -92,6 +100,9 @@ const TestimonialsSection = () => {
       time.set(time.get() + delta * 0.00012);
     }
   });
+
+  if (loading) return null;
+  if (testimonyImages.length === 0) return null;
 
   return (
     <section className="section-padding max-w-6xl mx-auto overflow-hidden">

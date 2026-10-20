@@ -99,17 +99,17 @@ const HeroSection = () => {
 
     {/* Content: image left, name+skills right */}
     <motion.div style={{ y: imageY }} className="relative z-20 w-full max-w-7xl mx-auto px-6 md:px-12 lg:px-20 flex flex-col md:flex-row items-center gap-10 md:gap-16">
-      {/* Portrait image */}
+      {/* Portrait image - 2x bigger scale */}
       <motion.div
         initial={{ opacity: 0, scale: 0.92, filter: "blur(10px)" }}
         animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
         transition={{ duration: 1.2, ease: "easeOut" }}
-        className="w-[106vw] max-w-[525px] md:w-[650px] md:max-w-none lg:w-[780px] flex-shrink-0"
+        className="w-[125vw] max-w-[850px] md:w-[1050px] md:max-w-none lg:w-[1350px] xl:w-[1550px] md:-ml-20 lg:-ml-36 xl:-ml-48 flex-shrink-0"
       >
         <img
           src={content.hero_image_desktop || heroDesktop}
           alt={content.title}
-          className="hidden md:block w-full h-auto"
+          className="hidden md:block w-full h-auto drop-shadow-2xl"
           onError={(e) => {
             (e.target as HTMLImageElement).src = heroDesktop;
           }}
@@ -117,7 +117,7 @@ const HeroSection = () => {
         <img
           src={content.hero_image_mobile || heroMobile}
           alt={content.title}
-          className="md:hidden w-full h-auto"
+          className="md:hidden w-full h-auto drop-shadow-2xl"
           onError={(e) => {
             (e.target as HTMLImageElement).src = heroMobile;
           }}
@@ -130,7 +130,7 @@ const HeroSection = () => {
         initial={{ opacity: 0, x: 60 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 1, delay: 0.4, ease: "easeOut" }}
-        className="text-center md:text-left"
+        className="text-center md:text-left relative z-30 flex-shrink-0"
       >
         <motion.h1
           initial={{ opacity: 0, y: 30, filter: "blur(8px)" }}

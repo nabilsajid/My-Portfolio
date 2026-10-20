@@ -5,12 +5,14 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Play } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import VideoModal from "@/components/VideoModal";
 import { imageMap } from "@/data/projects";
 
 const VideoCategoryPage = () => {
   const { categoryName } = useParams();
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedVideo, setSelectedVideo] = useState<{ title: string; video_url?: string } | null>(null);
 
   useEffect(() => {
     // Ensure we start at the top on load
@@ -89,16 +91,14 @@ const VideoCategoryPage = () => {
             {projects.map((project, i) => {
               const mainImage = imageMap[project.image_url] || project.image_url;
               return (
-                <motion.a
+                <motion.div
                   key={project.id}
-                  href={project.video_url || '#'}
-                  target={project.video_url ? "_blank" : undefined}
-                  rel="noopener noreferrer"
+                  onClick={() => setSelectedVideo(project)}
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.1 }}
-                  className="group relative aspect-video bg-card border border-border rounded-lg overflow-hidden cursor-pointer block"
+                  className="group relative aspect-video bg-card border border-border rounded-lg overflow-hidden cursor-pointer block select-none"
                 >
                   <img 
                     src={mainImage} 
@@ -106,20 +106,26 @@ const VideoCategoryPage = () => {
                     className="w-full h-full object-cover opacity-70 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500" 
                   />
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-12 h-12 rounded-full bg-primary/20 backdrop-blur-sm flex items-center justify-center border border-primary/30 group-hover:bg-primary/40 transition-colors">
-                      <Play className="w-4 h-4 text-primary fill-primary" />
+                    <div className="w-12 h-12 rounded-full bg-primary/20 backdrop-blur-sm flex items-center justify-center border border-primary/30 group-hover:bg-primary/40 group-hover:scale-110 transition-all duration-300">
+                      <Play className="w-4 h-4 text-primary fill-primary ml-0.5" />
                     </div>
                   </div>
                   <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-background/90 to-transparent">
                     <p className="font-medium text-lg">{project.title}</p>
                   </div>
-                </motion.a>
+                </motion.div>
               );
             })}
           </div>
         </div>
       </main>
 
+      <VideoModal
+        isOpen={!!selectedVideo}
+        onClose={() => setSelectedVideo(null)}
+        videoUrl={selectedVideo?.video_url}
+        title={selectedVideo?.title || ""}
+      />
       <Footer />
     </div>
   );

@@ -5,6 +5,7 @@ import { Link, useParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import LightboxModal from "@/components/LightboxModal";
+import VideoModal from "@/components/VideoModal";
 import { supabase } from "@/lib/supabase";
 import { imageMap } from "@/data/projects";
 
@@ -23,6 +24,7 @@ const ProjectDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -101,9 +103,14 @@ const ProjectDetailPage = () => {
             >
               <img src={mainImage} alt={project.title} className="w-full h-full object-cover opacity-60" />
               <div className="absolute inset-0 flex items-center justify-center">
-                <a href={project.video_url} target="_blank" rel="noreferrer" className="w-20 h-20 rounded-full bg-primary/30 backdrop-blur-md flex items-center justify-center border border-primary/50 hover:bg-primary/50 hover:scale-110 transition-all duration-300">
+                <button
+                  type="button"
+                  onClick={() => setIsVideoModalOpen(true)}
+                  aria-label="Play video"
+                  className="w-20 h-20 rounded-full bg-primary/30 backdrop-blur-md flex items-center justify-center border border-primary/50 hover:bg-primary/50 hover:scale-110 transition-all duration-300 cursor-pointer"
+                >
                   <Play className="w-8 h-8 text-white fill-white ml-1" />
-                </a>
+                </button>
               </div>
             </motion.div>
           )}
@@ -118,9 +125,14 @@ const ProjectDetailPage = () => {
             >
               <img src={mainImage} alt={project.title} className="w-full h-full object-cover opacity-60" />
               <div className="absolute inset-0 flex items-center justify-center">
-                <a href={project.video_url} target="_blank" rel="noreferrer" className="w-16 h-16 rounded-full bg-primary/30 backdrop-blur-md flex items-center justify-center border border-primary/50 hover:bg-primary/50 hover:scale-110 transition-all duration-300">
+                <button
+                  type="button"
+                  onClick={() => setIsVideoModalOpen(true)}
+                  aria-label="Play reel"
+                  className="w-16 h-16 rounded-full bg-primary/30 backdrop-blur-md flex items-center justify-center border border-primary/50 hover:bg-primary/50 hover:scale-110 transition-all duration-300 cursor-pointer"
+                >
                   <Play className="w-6 h-6 text-white fill-white ml-1" />
-                </a>
+                </button>
               </div>
             </motion.div>
           )}
@@ -165,6 +177,14 @@ const ProjectDetailPage = () => {
         onClose={() => setIsLightboxOpen(false)}
         images={isPhotoOrPoster ? allImages : gallery}
         initialIndex={lightboxIndex}
+      />
+
+      <VideoModal
+        isOpen={isVideoModalOpen}
+        onClose={() => setIsVideoModalOpen(false)}
+        videoUrl={project?.video_url}
+        title={project?.title || ""}
+        vertical={isShortForm}
       />
     </div>
   );

@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
 import SectionHeading from "./SectionHeading";
 import { Play, ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
+import VideoModal from "./VideoModal";
 
 export interface VideoItem {
   id: number;
@@ -174,6 +175,8 @@ const VideoSection = ({
   const dragMoved = useRef(0);
   const [activeDot, setActiveDot] = useState(0);
 
+  const [selectedVideo, setSelectedVideo] = useState<VideoItem | null>(null);
+
   // If items empty, return null
   if (!items || items.length === 0) return null;
 
@@ -292,9 +295,8 @@ const VideoSection = ({
 
   const handleCardClick = (item: VideoItem, isFront: boolean, itemIndex: number) => {
     if (isFront) {
-      if (item.video_url && item.video_url !== "#") {
-        window.open(item.video_url, "_blank", "noopener,noreferrer");
-      }
+      // Play directly in-page modal!
+      setSelectedVideo(item);
     } else {
       const currentT = time.get();
       const offset = (itemIndex / total) * 2 * Math.PI;
@@ -457,6 +459,14 @@ const VideoSection = ({
           </Link>
         </div>
       )}
+      {/* In-page Video Player Modal */}
+      <VideoModal
+        isOpen={!!selectedVideo}
+        onClose={() => setSelectedVideo(null)}
+        videoUrl={selectedVideo?.video_url}
+        title={selectedVideo?.title || ""}
+        vertical={vertical}
+      />
     </section>
   );
 };

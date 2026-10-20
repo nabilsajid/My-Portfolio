@@ -1,8 +1,10 @@
 import { motion } from "framer-motion";
 import { ArrowLeft, Play } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import VideoModal from "@/components/VideoModal";
 
 interface ShowcasePageProps {
   title: string;
@@ -22,6 +24,8 @@ const bentoPatterns = [
 ];
 
 const ShowcasePage = ({ title, subtitle, items, type = "video", vertical = false }: ShowcasePageProps) => {
+  const [selectedVideo, setSelectedVideo] = useState<{ title: string; video_url?: string } | null>(null);
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -59,57 +63,61 @@ const ShowcasePage = ({ title, subtitle, items, type = "video", vertical = false
         ) : vertical ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {items.map((item, i) => (
-              <motion.a
+              <motion.div
                 key={item.id + "-" + i}
-                href={item.video_url || '#'}
-                target={item.video_url ? "_blank" : undefined}
-                rel="noopener noreferrer"
+                onClick={() => setSelectedVideo(item)}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.05 }}
-                className="group relative aspect-[9/16] bg-card border border-border rounded-lg overflow-hidden cursor-pointer block"
+                className="group relative aspect-[9/16] bg-card border border-border rounded-lg overflow-hidden cursor-pointer block select-none"
               >
                 <img src={item.thumbnail} alt={item.title} className="w-full h-full object-cover opacity-70 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500" />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-12 h-12 rounded-full bg-primary/20 backdrop-blur-sm flex items-center justify-center border border-primary/30 group-hover:bg-primary/40 transition-colors">
-                    <Play className="w-4 h-4 text-primary fill-primary" />
+                  <div className="w-12 h-12 rounded-full bg-primary/20 backdrop-blur-sm flex items-center justify-center border border-primary/30 group-hover:bg-primary/40 group-hover:scale-110 transition-all duration-300">
+                    <Play className="w-4 h-4 text-primary fill-primary ml-0.5" />
                   </div>
                 </div>
                 <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-background/90 to-transparent">
                   <p className="text-xs font-medium">{item.title}</p>
                 </div>
-              </motion.a>
+              </motion.div>
             ))}
           </div>
         ) : (
           <div className="grid md:grid-cols-2 gap-4">
             {items.map((item, i) => (
-              <motion.a
+              <motion.div
                 key={item.id + "-" + i}
-                href={item.video_url || '#'}
-                target={item.video_url ? "_blank" : undefined}
-                rel="noopener noreferrer"
+                onClick={() => setSelectedVideo(item)}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.05 }}
-                className="group relative aspect-video bg-card border border-border rounded-lg overflow-hidden cursor-pointer block"
+                className="group relative aspect-video bg-card border border-border rounded-lg overflow-hidden cursor-pointer block select-none"
               >
                 <img src={item.thumbnail} alt={item.title} className="w-full h-full object-cover opacity-70 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500" />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-12 h-12 rounded-full bg-primary/20 backdrop-blur-sm flex items-center justify-center border border-primary/30 group-hover:bg-primary/40 transition-colors">
-                    <Play className="w-4 h-4 text-primary fill-primary" />
+                  <div className="w-12 h-12 rounded-full bg-primary/20 backdrop-blur-sm flex items-center justify-center border border-primary/30 group-hover:bg-primary/40 group-hover:scale-110 transition-all duration-300">
+                    <Play className="w-4 h-4 text-primary fill-primary ml-0.5" />
                   </div>
                 </div>
                 <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-background/90 to-transparent">
                   <p className="text-xs font-medium">{item.title}</p>
                 </div>
-              </motion.a>
+              </motion.div>
             ))}
           </div>
         )}
       </div>
+
+      <VideoModal
+        isOpen={!!selectedVideo}
+        onClose={() => setSelectedVideo(null)}
+        videoUrl={selectedVideo?.video_url}
+        title={selectedVideo?.title || ""}
+        vertical={vertical}
+      />
       <Footer />
     </div>
   );

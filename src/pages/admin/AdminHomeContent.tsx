@@ -5,7 +5,8 @@ import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { useImageCropper } from "@/components/admin/useImageCropper";
-import { Image as ImageIcon, Loader2, RotateCcw, Undo2, Crop } from "lucide-react";
+import { Image as ImageIcon, Loader2, RotateCcw, Undo2, Crop, Film, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 import heroDesktop from "@/assets/hero-desktop.png";
 import heroMobile from "@/assets/hero-mobile.png";
 
@@ -150,6 +151,24 @@ const AdminHomeContent = () => {
             {mutation.isPending ? "Saving..." : "Save Changes"}
           </Button>
         </div>
+      </div>
+
+      {/* Showreel Quick Access Card */}
+      <div className="bg-card p-5 sm:p-6 rounded-xl border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+            <Film className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-base">Showreel Video</h3>
+            <p className="text-xs text-muted-foreground">Manage the video that plays when visitors click "Watch Showreel"</p>
+          </div>
+        </div>
+        <Link to="/admin/dashboard/showreel">
+          <Button variant="outline" className="flex items-center gap-2 border-primary/30 hover:border-primary">
+            Open Showreel Manager <ArrowRight className="w-4 h-4 ml-1" />
+          </Button>
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">

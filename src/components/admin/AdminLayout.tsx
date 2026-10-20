@@ -9,6 +9,7 @@ import {
   Settings, 
   LogOut,
   Video,
+  Film,
   Camera,
   Layers,
   HelpCircle,
@@ -37,6 +38,7 @@ const AdminLayout = () => {
 
   const navItems = [
     { name: "Home & About", path: "/admin/dashboard/home", icon: Settings },
+    { name: "Showreel", path: "/admin/dashboard/showreel", icon: Film },
     { name: "Video Projects", path: "/admin/dashboard/projects?category=video", icon: Video },
     { name: "Photography", path: "/admin/dashboard/projects?category=photography", icon: Camera },
     { name: "Clients", path: "/admin/dashboard/clients", icon: Layers },

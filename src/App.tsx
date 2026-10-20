@@ -27,6 +27,7 @@ import AdminStats from "./pages/admin/AdminStats";
 import AdminAchievements from "./pages/admin/AdminAchievements";
 import AdminClients from "./pages/admin/AdminClients";
 import AdminTestimonials from "./pages/admin/AdminTestimonials";
+import AdminShowreel from "./pages/admin/AdminShowreel";
 
 const queryClient = new QueryClient();
 
@@ -52,6 +53,7 @@ const App = () => (
             <Route path="/admin/dashboard" element={<AdminLayout />}>
               <Route index element={<Navigate to="home" replace />} />
               <Route path="home" element={<AdminHomeContent />} />
+              <Route path="showreel" element={<AdminShowreel />} />
               <Route path="projects" element={<AdminProjects />} />
               <Route path="skills" element={<AdminSkills />} />
               <Route path="experience" element={<AdminExperience />} />

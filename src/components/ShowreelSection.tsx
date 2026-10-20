@@ -21,6 +21,17 @@ const ShowreelSection = () => {
 
         if (!error && data?.showreel_url) {
           setShowreelUrl(data.showreel_url);
+          return;
+        }
+
+        const { data: homeData } = await supabase
+          .from("home_content")
+          .select("*")
+          .limit(1)
+          .single();
+
+        if (homeData && (homeData as any).showreel_url) {
+          setShowreelUrl((homeData as any).showreel_url);
         }
       } catch (err) {
         console.error("Error fetching showreel:", err);

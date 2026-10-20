@@ -110,11 +110,17 @@ const HeroSection = () => {
           src={content.hero_image_desktop || heroDesktop}
           alt={content.title}
           className="hidden md:block w-full h-auto"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = heroDesktop;
+          }}
         />
         <img
           src={content.hero_image_mobile || heroMobile}
           alt={content.title}
           className="md:hidden w-full h-auto"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = heroMobile;
+          }}
         />
       </motion.div>
 

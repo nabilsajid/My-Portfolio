@@ -99,12 +99,12 @@ const HeroSection = () => {
 
     {/* Content: image left, name+skills right */}
     <motion.div style={{ y: imageY }} className="relative z-20 w-full max-w-7xl mx-auto px-6 md:px-12 lg:px-20 flex flex-col md:flex-row items-center gap-10 md:gap-16">
-      {/* Portrait image - 2x bigger scale */}
+      {/* Portrait image - 1.3x scaled */}
       <motion.div
         initial={{ opacity: 0, scale: 0.92, filter: "blur(10px)" }}
         animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
         transition={{ duration: 1.2, ease: "easeOut" }}
-        className="w-[125vw] max-w-[850px] md:w-[1050px] md:max-w-none lg:w-[1350px] xl:w-[1550px] md:-ml-20 lg:-ml-36 xl:-ml-48 flex-shrink-0"
+        className="w-[110vw] max-w-[680px] md:w-[845px] md:max-w-none lg:w-[1015px] xl:w-[1080px] md:-ml-6 lg:-ml-12 xl:-ml-16 flex-shrink-0"
       >
         <img
           src={content.hero_image_desktop || heroDesktop}

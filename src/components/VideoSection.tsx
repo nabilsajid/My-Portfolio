@@ -54,32 +54,35 @@ const CarouselCard = ({
   const rotateY = useTransform(angle, (a: number) => {
     let norm = (-a) % (2 * Math.PI);
     if (norm > Math.PI) norm -= 2 * Math.PI;
-    if (norm < -Math.PI) norm += 2 * Math.PI;
-    const deg = -norm * (180 / Math.PI) * 0.22;
-    return Math.max(-20, Math.min(20, deg));
+    if (norm < -Math.PI) norm -= 2 * Math.PI;
+    const factor = vertical ? 0.18 : 0.22;
+    const deg = -norm * (180 / Math.PI) * factor;
+    const maxRot = vertical ? 15 : 18;
+    return Math.max(-maxRot, Math.min(maxRot, deg));
   });
 
   const scale = useTransform(z, (zVal: number) => {
     const norm = (zVal + 1) / 2;
-    return 0.72 + norm * 0.28;
+    const baseScale = vertical ? 0.75 : 0.72;
+    return baseScale + norm * (1 - baseScale);
   });
 
   const opacity = useTransform(z, (zVal: number) => {
-    if (zVal <= -0.32) return 0;
-    return Math.min(1, (zVal + 0.32) / 0.85);
+    if (zVal <= -0.25) return 0;
+    return Math.min(1, (zVal + 0.25) / 0.75);
   });
 
   // Strict z-index hierarchy ensuring front card is always on top without 3D polygon clipping
   const zIndex = useTransform(z, (zVal: number) => {
     if (zVal > 0.85) return 60;
-    if (zVal > 0.3) return 30;
+    if (zVal > 0.25) return 30;
     if (zVal > -0.2) return 10;
     return 1;
   });
 
   const filter = useTransform(z, (zVal: number) => {
     const b = Math.max(0.4, 0.5 + Math.max(0, zVal) * 0.5);
-    const blur = Math.max(0, (0.6 - zVal) * 2.2);
+    const blur = Math.max(0, (0.55 - zVal) * 2.0);
     return `brightness(${b}) blur(${blur}px)`;
   });
 
@@ -118,7 +121,7 @@ const CarouselCard = ({
       onMouseLeave={() => setHovered(false)}
       className={`absolute select-none cursor-pointer rounded-2xl overflow-hidden bg-card border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.7)] group transition-colors duration-300 ${
         vertical
-          ? "w-[170px] sm:w-[210px] md:w-[250px] aspect-[9/16]"
+          ? "w-[160px] sm:w-[200px] md:w-[240px] aspect-[9/16]"
           : "w-[270px] sm:w-[350px] md:w-[440px] lg:w-[480px] aspect-video"
       }`}
     >
@@ -137,8 +140,10 @@ const CarouselCard = ({
 
       {/* Play button overlay */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-primary/25 backdrop-blur-md flex items-center justify-center border border-primary/40 group-hover:bg-primary/45 group-hover:scale-110 transition-all duration-300 shadow-[0_0_20px_rgba(168,85,247,0.45)]">
-          <Play className="w-5 h-5 text-primary fill-primary ml-0.5" />
+        <div className={`rounded-full bg-primary/25 backdrop-blur-md flex items-center justify-center border border-primary/40 group-hover:bg-primary/45 group-hover:scale-110 transition-all duration-300 shadow-[0_0_20px_rgba(168,85,247,0.45)] ${
+          vertical ? "w-11 h-11 sm:w-13 sm:h-13" : "w-12 h-12 sm:w-14 sm:h-14"
+        }`}>
+          <Play className={`text-primary fill-primary ml-0.5 ${vertical ? "w-4 h-4 sm:w-5 sm:h-5" : "w-5 h-5"}`} />
         </div>
       </div>
 
@@ -160,7 +165,7 @@ const VideoSection = ({
   moreLink,
 }: VideoSectionProps) => {
   const time = useMotionValue(0);
-  const [radius, setRadius] = useState(440);
+  const [radius, setRadius] = useState(() => (vertical ? 340 : 470));
   const [isHovered, setIsHovered] = useState(false);
   const isPointerDown = useRef(false);
   const isDragging = useRef(false);
@@ -172,12 +177,13 @@ const VideoSection = ({
   // If items empty, return null
   if (!items || items.length === 0) return null;
 
-  // Ensure minimum number of cards for a full 3D ring
+  // Ensure minimum number of cards for a full 3D ring without over-crowding
   const displayItems = useMemo(() => {
-    if (items.length >= 6) return items;
-    if (items.length === 1) return [items[0], items[0], items[0], items[0], items[0], items[0]];
+    if (items.length >= 4) return items;
+    if (items.length === 1) return [items[0], items[0], items[0], items[0], items[0]];
     if (items.length === 2) return [...items, ...items, ...items];
-    return [...items, ...items];
+    if (items.length === 3) return [...items, ...items];
+    return items;
   }, [items]);
 
   const total = displayItems.length;
@@ -189,7 +195,7 @@ const VideoSection = ({
       const isMobile = w < 640;
       const isTablet = w < 1024;
       if (vertical) {
-        setRadius(isMobile ? Math.min(w * 0.40, 180) : isTablet ? 290 : 370);
+        setRadius(isMobile ? Math.min(w * 0.42, 170) : isTablet ? 260 : 340);
       } else {
         setRadius(isMobile ? Math.min(w * 0.44, 230) : isTablet ? 360 : 470);
       }
@@ -390,7 +396,7 @@ const VideoSection = ({
         <div
           className={`relative w-full flex items-center justify-center ${
             vertical
-              ? "h-[360px] sm:h-[440px] md:h-[520px]"
+              ? "h-[340px] sm:h-[420px] md:h-[490px]"
               : "h-[260px] sm:h-[340px] md:h-[420px]"
           }`}
         >

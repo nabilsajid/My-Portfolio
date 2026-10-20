@@ -370,7 +370,7 @@ const AdminHomeContent = () => {
             </div>
 
             {/* Preview Area */}
-            <div className="aspect-[4/3] max-w-[440px] mx-auto bg-background/60 border-2 border-dashed border-border rounded-xl overflow-hidden relative flex items-center justify-center p-4 group shadow-inner">
+            <div className="aspect-[4/3] max-w-[340px] mx-auto bg-background/60 border-2 border-dashed border-border rounded-xl overflow-hidden relative flex items-center justify-center p-4 group shadow-inner">
               <img
                 src={desktopPreviewSrc}
                 alt="Desktop Hero Preview"
@@ -475,7 +475,7 @@ const AdminHomeContent = () => {
             </div>
 
             {/* Preview Area */}
-            <div className="aspect-[3/4] max-w-[310px] mx-auto bg-background/60 border-2 border-dashed border-border rounded-xl overflow-hidden relative flex items-center justify-center p-3 group shadow-inner">
+            <div className="aspect-[3/4] max-w-[240px] mx-auto bg-background/60 border-2 border-dashed border-border rounded-xl overflow-hidden relative flex items-center justify-center p-3 group shadow-inner">
               <img
                 src={mobilePreviewSrc}
                 alt="Mobile Hero Preview"

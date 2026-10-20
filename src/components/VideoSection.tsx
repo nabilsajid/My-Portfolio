@@ -1,4 +1,4 @@
-import { motion, useAnimationFrame, useMotionValue, useTransform, animate, MotionValue } from "framer-motion";
+import { motion, useMotionValue, useTransform, animate, MotionValue } from "framer-motion";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
 import SectionHeading from "./SectionHeading";
@@ -50,16 +50,18 @@ const CarouselCard = ({
   const x = useTransform(angle, (a: number) => Math.sin(-a) * radius);
   const z = useTransform(angle, (a: number) => Math.cos(-a));
 
+  // Subtle 3D rotation angle clamped to prevent harsh cutting/overlap
   const rotateY = useTransform(angle, (a: number) => {
     let norm = (-a) % (2 * Math.PI);
     if (norm > Math.PI) norm -= 2 * Math.PI;
     if (norm < -Math.PI) norm += 2 * Math.PI;
-    return -norm * (180 / Math.PI) * 0.42;
+    const deg = -norm * (180 / Math.PI) * 0.22;
+    return Math.max(-20, Math.min(20, deg));
   });
 
   const scale = useTransform(z, (zVal: number) => {
     const norm = (zVal + 1) / 2;
-    return 0.68 + norm * 0.32;
+    return 0.72 + norm * 0.28;
   });
 
   const opacity = useTransform(z, (zVal: number) => {
@@ -67,19 +69,25 @@ const CarouselCard = ({
     return Math.min(1, (zVal + 0.32) / 0.85);
   });
 
-  const zIndex = useTransform(z, (zVal: number) => Math.round((zVal + 1) * 100));
+  // Strict z-index hierarchy ensuring front card is always on top without 3D polygon clipping
+  const zIndex = useTransform(z, (zVal: number) => {
+    if (zVal > 0.85) return 60;
+    if (zVal > 0.3) return 30;
+    if (zVal > -0.2) return 10;
+    return 1;
+  });
 
   const filter = useTransform(z, (zVal: number) => {
-    const b = Math.max(0.35, 0.45 + Math.max(0, zVal) * 0.55);
-    const blur = Math.max(0, (0.6 - zVal) * 2.5);
+    const b = Math.max(0.4, 0.5 + Math.max(0, zVal) * 0.5);
+    const blur = Math.max(0, (0.6 - zVal) * 2.2);
     return `brightness(${b}) blur(${blur}px)`;
   });
 
   const ringOpacity = useTransform(z, (zVal: number) => {
-    return Math.max(0, (zVal - 0.75) / 0.25);
+    return Math.max(0, (zVal - 0.78) / 0.22);
   });
 
-  const pointerEvents = useTransform(z, (zVal: number) => (zVal > -0.25 ? "auto" : "none"));
+  const pointerEvents = useTransform(z, (zVal: number) => (zVal > -0.2 ? "auto" : "none"));
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -104,15 +112,14 @@ const CarouselCard = ({
         filter,
         rotateY,
         pointerEvents: pointerEvents as any,
-        transformStyle: "preserve-3d",
       }}
       onClick={handleClick}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className={`absolute select-none cursor-pointer rounded-2xl overflow-hidden bg-card border border-white/10 shadow-2xl group transition-colors duration-300 ${
+      className={`absolute select-none cursor-pointer rounded-2xl overflow-hidden bg-card border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.7)] group transition-colors duration-300 ${
         vertical
           ? "w-[170px] sm:w-[210px] md:w-[250px] aspect-[9/16]"
-          : "w-[270px] sm:w-[360px] md:w-[460px] lg:w-[500px] aspect-video"
+          : "w-[270px] sm:w-[350px] md:w-[440px] lg:w-[480px] aspect-video"
       }`}
     >
       <img
@@ -125,7 +132,7 @@ const CarouselCard = ({
       {/* Front active glowing ring */}
       <motion.div
         style={{ opacity: ringOpacity }}
-        className="absolute inset-0 rounded-2xl pointer-events-none border-2 border-primary shadow-[0_0_35px_rgba(168,85,247,0.35)]"
+        className="absolute inset-0 rounded-2xl pointer-events-none border-2 border-primary shadow-[0_0_35px_rgba(168,85,247,0.4)]"
       />
 
       {/* Play button overlay */}
@@ -153,7 +160,7 @@ const VideoSection = ({
   moreLink,
 }: VideoSectionProps) => {
   const time = useMotionValue(0);
-  const [radius, setRadius] = useState(380);
+  const [radius, setRadius] = useState(440);
   const [isHovered, setIsHovered] = useState(false);
   const isPointerDown = useRef(false);
   const isDragging = useRef(false);
@@ -182,9 +189,9 @@ const VideoSection = ({
       const isMobile = w < 640;
       const isTablet = w < 1024;
       if (vertical) {
-        setRadius(isMobile ? Math.min(w * 0.38, 170) : isTablet ? 280 : 360);
+        setRadius(isMobile ? Math.min(w * 0.40, 180) : isTablet ? 290 : 370);
       } else {
-        setRadius(isMobile ? Math.min(w * 0.42, 200) : isTablet ? 340 : 440);
+        setRadius(isMobile ? Math.min(w * 0.44, 230) : isTablet ? 360 : 470);
       }
     };
     updateRadius();
@@ -202,30 +209,62 @@ const VideoSection = ({
     return () => unsubscribe();
   }, [total, originalCount, time]);
 
-  useAnimationFrame((_, delta) => {
-    if (!isHovered && !isDragging.current && !isPointerDown.current) {
-      time.set(time.get() + delta * 0.0001);
-    }
-  });
+  // Smooth auto-advance by 1 card every 4.5 seconds (paused on hover or drag)
+  useEffect(() => {
+    if (isHovered) return;
+
+    const interval = setInterval(() => {
+      if (!isDragging.current && !isPointerDown.current) {
+        const step = (2 * Math.PI) / total;
+        const currentStep = Math.round(time.get() / step);
+        const targetT = (currentStep - 1) * step;
+        animate(time, targetT, {
+          type: "spring",
+          stiffness: 55,
+          damping: 18,
+          mass: 0.8,
+        });
+      }
+    }, 4500);
+
+    return () => clearInterval(interval);
+  }, [total, isHovered, time]);
 
   const rotateToVirtualIndex = (vIndex: number) => {
     const step = (2 * Math.PI) / total;
     const targetT = -vIndex * step;
-    animate(time, targetT, { type: "spring", stiffness: 60, damping: 18 });
+    animate(time, targetT, {
+      type: "spring",
+      stiffness: 55,
+      damping: 18,
+      mass: 0.8,
+    });
   };
 
-  const handlePrev = () => {
+  const handlePrev = (e: React.MouseEvent) => {
+    e.stopPropagation();
     const step = (2 * Math.PI) / total;
     const currentStep = Math.round(time.get() / step);
     const targetT = (currentStep + 1) * step;
-    animate(time, targetT, { type: "spring", stiffness: 60, damping: 18 });
+    animate(time, targetT, {
+      type: "spring",
+      stiffness: 55,
+      damping: 18,
+      mass: 0.8,
+    });
   };
 
-  const handleNext = () => {
+  const handleNext = (e: React.MouseEvent) => {
+    e.stopPropagation();
     const step = (2 * Math.PI) / total;
     const currentStep = Math.round(time.get() / step);
     const targetT = (currentStep - 1) * step;
-    animate(time, targetT, { type: "spring", stiffness: 60, damping: 18 });
+    animate(time, targetT, {
+      type: "spring",
+      stiffness: 55,
+      damping: 18,
+      mass: 0.8,
+    });
   };
 
   const handleDotClick = (targetOriginalIndex: number) => {
@@ -257,7 +296,12 @@ const VideoSection = ({
       const nearestMultiple = Math.round(currentAngle / (2 * Math.PI)) * 2 * Math.PI;
       const delta = nearestMultiple - currentAngle;
       const targetT = currentT + delta;
-      animate(time, targetT, { type: "spring", stiffness: 60, damping: 18 });
+      animate(time, targetT, {
+        type: "spring",
+        stiffness: 55,
+        damping: 18,
+        mass: 0.8,
+      });
     }
   };
 
@@ -274,11 +318,11 @@ const VideoSection = ({
     if (!isPointerDown.current) return;
     const dx = e.clientX - startX.current;
     dragMoved.current = dx;
-    if (Math.abs(dx) > 6) {
+    if (Math.abs(dx) > 8) {
       isDragging.current = true;
     }
     if (isDragging.current) {
-      const sensitivity = 0.0032;
+      const sensitivity = 0.0028;
       time.set(startTime.current - dx * sensitivity);
     }
   };
@@ -291,13 +335,26 @@ const VideoSection = ({
       setTimeout(() => {
         isDragging.current = false;
         dragMoved.current = 0;
-      }, 60);
+      }, 80);
 
       const step = (2 * Math.PI) / total;
       const currentT = time.get();
-      const momentum = Math.max(-0.8, Math.min(0.8, -dragMoved.current * 0.0015));
-      const targetT = Math.round((currentT + momentum) / step) * step;
-      animate(time, targetT, { type: "spring", stiffness: 65, damping: 19 });
+      const flickThreshold = 35;
+      let snapStep = Math.round(currentT / step);
+
+      if (dragMoved.current > flickThreshold) {
+        snapStep = Math.ceil(currentT / step);
+      } else if (dragMoved.current < -flickThreshold) {
+        snapStep = Math.floor(currentT / step);
+      }
+
+      const targetT = snapStep * step;
+      animate(time, targetT, {
+        type: "spring",
+        stiffness: 55,
+        damping: 18,
+        mass: 0.8,
+      });
     } else {
       dragMoved.current = 0;
     }
@@ -312,6 +369,8 @@ const VideoSection = ({
       <div
         className="relative flex items-center justify-center my-6 sm:my-8 touch-pan-y select-none"
         style={{ perspective: 1200 }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
@@ -322,7 +381,7 @@ const VideoSection = ({
           type="button"
           onClick={handlePrev}
           aria-label="Previous video"
-          className="absolute left-1 sm:left-4 z-40 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-background/70 hover:bg-background/95 backdrop-blur-md border border-white/10 hover:border-primary/50 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg group cursor-pointer"
+          className="absolute left-2 sm:left-4 z-50 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-background/80 hover:bg-background/95 backdrop-blur-md border border-white/10 hover:border-primary/50 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg group cursor-pointer"
         >
           <ChevronLeft className="w-5 h-5 group-hover:text-primary transition-colors" />
         </button>
@@ -331,10 +390,9 @@ const VideoSection = ({
         <div
           className={`relative w-full flex items-center justify-center ${
             vertical
-              ? "h-[350px] sm:h-[430px] md:h-[510px]"
-              : "h-[240px] sm:h-[310px] md:h-[390px]"
+              ? "h-[360px] sm:h-[440px] md:h-[520px]"
+              : "h-[260px] sm:h-[340px] md:h-[420px]"
           }`}
-          style={{ transformStyle: "preserve-3d" }}
         >
           {displayItems.map((item, index) => (
             <CarouselCard
@@ -358,7 +416,7 @@ const VideoSection = ({
           type="button"
           onClick={handleNext}
           aria-label="Next video"
-          className="absolute right-1 sm:right-4 z-40 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-background/70 hover:bg-background/95 backdrop-blur-md border border-white/10 hover:border-primary/50 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg group cursor-pointer"
+          className="absolute right-2 sm:right-4 z-50 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-background/80 hover:bg-background/95 backdrop-blur-md border border-white/10 hover:border-primary/50 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg group cursor-pointer"
         >
           <ChevronRight className="w-5 h-5 group-hover:text-primary transition-colors" />
         </button>
